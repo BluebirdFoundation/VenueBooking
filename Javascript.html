@@ -1,0 +1,250 @@
+<script type='text/javascript'>
+  //  ------------------------------------------
+        $( document ).ready(function() {         
+          var startDate = new Date();      
+         
+         
+          $('#startDate' ).val(new Date().toISOString().slice(0, 10)).change(); 
+          $( '#endDate' ).val(new Date().toISOString().slice(0, 10)).change();
+
+          updateEndTime();
+
+          // only enable email confirm if user selected
+          $( '.holder' ).change(function() {            
+             switch($(this).val()) {
+                //  case  'Casual user (no details needed)' :
+                //        $('.email-confirm')[0].classList.add('d-none');     
+                //        $('.email-details')[0].classList.add('d-none');                                
+                //        break;
+                default :
+                   $('.email-confirm')[0].classList.remove('d-none');    
+                   //$('.email-details')[0].classList.remove('d-none'); 
+                   $('#Recipient').val(JSON.parse($('.holder option:selected').val()).email)                  
+            }   
+          });   
+
+          
+          $( '#Email' ).change(function() {            
+           if ($( '#Email' ).prop('checked')) {
+               $('#email-details')[0].classList.remove('d-none');   
+           } else {
+               $('#email-details')[0].classList.add('d-none'); 
+           }
+          });    
+
+          $( '#startDate' ).change(function() {            
+            updateRecurrenceOptions();
+          });    
+
+
+
+          // only enable user for user booking type
+          $( '.bookingType' ).change(function() {            
+             switch($(this).val()) {
+                 case  'User booking' :
+                     $('.holder').removeAttr('disabled');  
+                     break;
+                default :
+                  $('.holder').prop('selectedIndex', 0);
+                  $('.holder')[0].dispatchEvent(new Event('change'));     
+                  $('.holder').attr('disabled', 'disabled');                   
+            }   
+          });    
+
+          // keep the email subject synced with the title
+          $( '#Title' ).change(function() {            
+            $('#Subject').val($('#Title').val()); 
+          });    
+
+          
+        });
+        
+       //  ------------------------------------------
+        function handleSubmit() {  
+          console.log('handle submit')    ;
+          // async !!!!!
+          event.preventDefault();     
+         
+          if (!isAtLeastOneChecked('Spaces')){            
+            $('#SpacesError').text('You must select at least one Space');
+            event.preventDefault();
+             return false;
+          } else {$('#SpacesError').text('')};
+
+          // if ($('#Email').is(':checked') && !($.trim($('#Recipient').val())) return /^\S+@\S+\.\S+$/.test(email)) {         
+           if ($('#Email').is(':checked') && !(/^\S+@\S+\.\S+$/.test($('#Recipient').val()))) {       
+             $('#RecipientError').text('Please select or enter a valid email address');
+             event.preventDefault();
+             return false;
+          } else {$('#RecipientError').text('')};           
+
+          $('.spinner-confirm')[0].classList.remove('d-none');     
+          $('#BookingError')[0].classList.add('d-none');           
+          $('#BookingStatus').text('Please wait while I check the booking ...');
+          $('#BookingStatus')[0].classList.remove('d-none');
+          google.script.run
+            .withSuccessHandler(calendarSuccess).withFailureHandler(calendarFailure)
+            .createCalendarEntries(event.target);
+         }
+
+
+         //  ------------------------------------------
+         function isAtLeastOneChecked(name) {
+          let checkboxes = Array.from(document.getElementsByName(name));
+          return checkboxes.some(e => e.checked);
+          }
+
+          //  ------------------------------------------
+          function calendarSuccess(returnValue) {
+             $('.spinner-confirm')[0].classList.add('d-none'); 
+            $('#BookingStatus').text('');
+            console.log('calendar success ' + returnValue.status + ':' + returnValue.message);
+            if (returnValue.status === 'Clash') {
+              var message = returnValue.message + '<ul list-disc error-message> <li>' + returnValue.clashes.join('</li><li>') + '</li>' + '</ul>';
+              message += 'Conflicting bookings are not allowed, so resolve the conflict and give it another go!'
+              console.log(message);
+              $('#BookingError').html(message);
+              $('#BookingError')[0].classList.remove('d-none');   
+              $('#BookingStatus')[0].classList.add('d-none');  
+            } else {                
+                 $('#BookingStatus').text('Booking successful. Please check Google Calendar to confirm');
+                 $('#BookingStatus')[0].classList.remove('d-none');     
+            }
+            
+            // window.top.close();
+          }
+
+         //  ------------------------------------------ 
+         function calendarFailure(error) {
+           $('.spinner-confirm')[0].classList.add('d-none'); 
+           $('#BookingStatus')[0].classList.add('d-none');     
+           $('#BookingError').html(error.message);
+           $('#BookingError')[0].classList.remove('d-none');  
+           // leave the logging
+            console.log(error);
+         }
+       
+
+        // update the list of available end times to follow the selected start time
+        // and select 1 hour after the start time
+        function updateEndTime() {          
+          let selectedStartTime = convertTo24Hour($('#startTimeSelect option:selected').val()); 
+          let selectedStartTimePlusHour = getMinutes(selectedStartTime) + 60;
+          let startTimeSelect = document.getElementById('startTimeSelect');
+          let endTimeSelect = document.getElementById('endTimeSelect');
+          let startTimes = [...startTimeSelect.options].map(o => o.text);
+          
+          endTimeSelect.innerHTML = '';
+          startTimes.forEach(function(startTime) {
+            let startTime24=convertTo24Hour(startTime);           
+            if (startTime24 > selectedStartTime) {
+              var option = document.createElement('option');              
+              option.value = startTime;
+              option.text = startTime;
+             
+              if (getMinutes(startTime24) == selectedStartTimePlusHour) {
+                option.setAttribute('selected', true);
+              }
+              endTimeSelect.add(option);              
+            }
+          }); 
+        }
+
+    function getMinutes(time24) {
+        let [hours, minutes] = time24.split(':').map(Number);         
+        return  ((hours % 24) * 60) + minutes;  
+    }
+
+    // Convert a HH:MM am/pm to a 24 hour integer
+    function convertTo24Hour(timeString) {
+      let date = new Date(`01/01/2022 ${timeString}`);
+      let options = { hour: '2-digit', minute: '2-digit', hour12: false };
+      let formattedTime = new Intl.DateTimeFormat('en-GB', options).format(date);
+      return formattedTime;
+    }
+
+    function updateRecurrenceOptions() {
+      const recurrence = document.getElementById('recurrence-section');
+      const frequency = document.getElementById('frequency').value;
+      const weeklyOptions = document.getElementById('weeklyOptions');
+      const monthlyOptions = document.getElementById('monthlyOptions');
+      const intervalUnit = document.getElementById('intervalUnit');
+
+       if (frequency === 'none') {
+          recurrence.classList.add('d-none');
+          return;
+       } else {
+          recurrence.classList.remove('d-none');
+       }
+      
+      // Hide all option sections first
+      weeklyOptions.classList.add('d-none');
+      monthlyOptions.classList.add('d-none');
+      
+      // Update interval unit text
+      intervalUnit.textContent = frequency + '(s)';
+      
+      // Show relevant options
+      if (frequency === 'week') {
+        document.querySelectorAll('#weeklyOptions input[type="checkbox"]').forEach(cb => cb.checked = false);
+        weeklyOptions.classList.remove('d-none');
+        // Check the current day's checkbox by default
+        const days = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+        const day = new Date($('#startDate' ).val()).getDay();      
+        document.getElementById(days[day]).checked = true;
+      } else if (frequency === 'month') {
+        monthlyOptions.classList.remove('d-none');
+      }
+    }
+    
+    function toggleEndFields() {
+      const endType = document.getElementById('endType').value;
+      document.getElementById('occurrencesField').classList.toggle('d-none', endType !== 'after');
+      document.getElementById('endDateField').classList.toggle('d-none', endType !== 'on');
+    }  
+
+    function addDate() {
+            const dateInput = document.getElementById('dateInput');
+            const dateContainer = document.getElementById('dateContainer');
+            const dateValue = dateInput.value;
+
+            if (dateValue) {
+                // Create a new badge for displaying the date with a delete icon
+                const badgeElement = document.createElement('div');
+                badgeElement.className = 'badge bg-primary me-2 mb-2';
+                
+                // Create text node for date
+                const dateText = document.createTextNode(dateValue);
+                badgeElement.appendChild(dateText);
+
+                inputElement = document.createElement('input');
+
+                // create hidden input
+                inputElement = document.createElement('input');
+                inputElement.className='d-none';
+                inputElement.type='text' ;
+                inputElement.name="Exceptions";
+                inputElement.value = dateValue;
+                badgeElement.appendChild(inputElement);
+
+                // Create and append delete icon
+                const deleteIcon = document.createElement('span');
+                deleteIcon.className = 'delete-icon';
+                deleteIcon.textContent = 'X';
+                deleteIcon.onclick = function() {
+                    dateContainer.removeChild(badgeElement);
+                    if (dateContainer.childElementCount === 1) {
+                       document.getElementById('noExceptions').classList.remove('d-none');
+                    }
+                };
+                badgeElement.appendChild(deleteIcon);
+
+                // Add the badge to the container
+                dateContainer.appendChild(badgeElement);
+
+                // Clear the date input for the next entry
+                dateInput.value = '';
+                document.getElementById('noExceptions').classList.add('d-none');
+            }
+        }
+</script>

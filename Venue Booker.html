@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+   <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>New Booking</title>
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+      <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+   </head>
+   <body class="bg-light font-sans">
+      <form id="bookingForm" onsubmit="handleSubmit();">
+         <div class="container mt-4">
+            <div class="card mx-auto shadow-lg" style="max-width: 600px;">
+               <!-- Header -->
+               <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                  <h1 class="h5 mb-0 d-flex align-items-center">
+                     <i class="far fa-calendar-alt me-2"></i> New booking
+                  </h1>
+                  <!-- <button type="button" class="btn-close btn-close-white" onclick="window.top.close();"></button> -->
+               </div>
+               <!-- Form Content -->
+               <div class="card-body">
+                  <!-- Booking Type -->
+                  <div class="mb-3">
+                     <label class="form-label fw-medium">
+                     BOOKING TYPE<span class="text-danger">*</span>                    
+                     </label>
+                     <div class="d-flex gap-3">
+                        <div class="form-check form-check-inline">
+                           <input type="radio" id="userBooking" name="BookingType" class="btn-check bookingType" value="User booking" checked required>
+                           <label for="userBooking" class="btn btn-outline-primary px-4 py-2">User booking</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                           <input type="radio" id="internalUse" name="BookingType" class="btn-check bookingType" value="Internal use">
+                           <label for="internalUse" class="btn btn-outline-primary px-4 py-2"><i class="fas fa-home"></i> Internal use</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                           <input type="radio" id="unavailable" name="BookingType" class="btn-check bookingType" value="Unavailable">
+                           <label for="unavailable" class="btn btn-outline-primary px-4 py-2"><i class="fas fa-ban"></i> Unavailable</label>
+                        </div>
+                     </div>
+                  </div>
+                  <!-- Date & Time -->
+                  <div class="mb-3">
+                     <label class="form-label fw-medium">
+                     DATE & TIME<span class="text-danger">*</span>
+                     </label>
+                     <div class="d-flex align-items-center gap-3">
+                        <div class="input-group">
+                           <input type="date" id="startDate" name="BookingDate" class="form-control" required>
+                        </div>
+                        <select id="startTimeSelect" name="StartTime" class="form-select" onchange="updateEndTime()" required>
+                           <? for (var i = 0; i < startTimes.length; i++) { ?>
+                           <option <?= selectedStartTime[i]?> ><?= startTimes[i] ?></option>
+                           <? } ?>
+                        </select>
+                        <span >&nbsp;to&nbsp;</span>
+                        <select id="endTimeSelect" name="EndTime" class="form-select" required>
+                           <option>10:00 am</option>
+                        </select>
+                     </div>
+                  </div>
+                  <!-- Repeat -->
+                  <div class="mb-3">
+                     <label class="form-label fw-medium">REPEAT<span class="text-danger">*</span></label>
+                     <select id="frequency" name="Frequency" class="form-select" onchange="updateRecurrenceOptions()" required>
+                        <option value="none">None</option>
+                        <option value="day">Daily</option>
+                        <option value="week">Weekly</option>
+                        <option value="month">Monthly</option>
+                        <option value="year">Yearly</option>
+                     </select>
+                  </div>
+                  <div id="recurrence-section" class="d-none mb-4 p-3 bg-white border border-secondary rounded shadow">
+                     <!-- Repeat Every -->
+                     <div class="mb-3">
+                        <label class="form-label fw-medium">Repeat every:</label>
+                        <div class="d-flex align-items-center">
+                           <input type="number" name="Interval" id="interval" min="1" value="1" class="form-control me-2" style="width: 80px;">
+                           <span id="intervalUnit">days</span>
+                        </div>
+                     </div>
+                     <!-- Weekly Options -->
+                     <div id="weeklyOptions" class="d-none">
+                        <label class="form-label fw-medium">Repeat on:</label>
+                        <div class="d-flex flex-wrap gap-2">
+                           <div class="form-check form-check-inline">
+                              <input type="checkbox" id="sun" name="WeekDay" value="SUNDAY" class="form-check-input">
+                              <label for="sun" class="form-check-label">Sun</label>
+                           </div>
+                           <div class="form-check form-check-inline">
+                              <input type="checkbox" id="mon" name="WeekDay" value="MONDAY" class="form-check-input">
+                              <label for="mon" class="form-check-label">Mon</label>
+                           </div>
+                           <div class="form-check form-check-inline">
+                              <input type="checkbox" id="tue" name="WeekDay" value="TUESDAY" class="form-check-input">
+                              <label for="tue" class="form-check-label">Tue</label>
+                           </div>
+                           <div class="form-check form-check-inline">
+                              <input type="checkbox" id="wed" name="WeekDay" value="WEDNESDAY" class="form-check-input">
+                              <label for="wed" class="form-check-label">Wed</label>
+                           </div>
+                           <div class="form-check form-check-inline">
+                              <input type="checkbox" id="thu" name="WeekDay" value="THURSDAY" class="form-check-input">
+                              <label for="thu" class="form-check-label">Thu</label>
+                           </div>
+                           <div class="form-check form-check-inline">
+                              <input type="checkbox" id="fri" name="WeekDay" value="FRIDAY" class="form-check-input">
+                              <label for="fri" class="form-check-label">Fri</label>
+                           </div>
+                           <div class="form-check form-check-inline">
+                              <input type="checkbox" id="sat" name="WeekDay" value="SATURDAY" class="form-check-input">
+                              <label for="sat" class="form-check-label">Sat</label>
+                           </div>
+                        </div>
+                     </div>
+                     <!-- Monthly Options -->
+                     <div id="monthlyOptions" class="d-none">
+                        <label class="form-label fw-medium">Repeat by:</label>
+                        <div>
+                           <div class="form-check">
+                              <input type="radio" id="dayOfMonth" name="monthlyPattern" value="dayOfMonth" checked class="form-check-input">
+                              <label for="dayOfMonth" class="form-check-label">Day of the month</label>
+                           </div>
+                           <!-- Additional option (commented out in original) -->
+                           <!--           
+                              <div class="form-check">
+                                <input type="radio" id="dayOfWeek" name="monthlyPattern" value="dayOfWeek" class="form-check-input">
+                                <label for="dayOfWeek" class="form-check-label">Day of the week</label>
+                              </div>
+                              -->
+                        </div>
+                     </div>
+                     <!-- Exceptions -->
+                     <div class="mt-3">
+                        <label class="form-label fw-medium">Exceptions:</label>
+                        <div id="dateContainer" class="d-flex flex-row flex-wrap">
+                           <span  id="noExceptions" class="mb-2 text-secondary">No exceptions</span>
+                        </div>
+                        <div class="input-group">
+                           <input type="date" id="dateInput" class="form-control" on="Console.log('change')">
+                           <button onclick="addDate()" class="btn btn-primary" type="button">+</button>
+                        </div>
+                     </div>
+                     <!-- End Options -->
+                     <div class="mt-3">
+                        <label for="endType" class="form-label fw-medium">End:</label>
+                        <select id="endType" name="EndType" class="form-select" onchange="toggleEndFields()">
+                           <option value="never">Never</option>
+                           <option value="after">After</option>
+                           <option value="on">On date</option>
+                        </select>
+                     </div>
+                     <!-- Occurrences Field -->
+                     <div id="occurrencesField" class="d-none mt-3">
+                        <div class="d-flex align-items-center">
+                           <input type="number" id="occurrences" name="Occurrences" min="1" value="1" class="form-control me-2" style="width: 80px;">
+                           <span>occurrences</span>
+                        </div>
+                     </div>
+                     <!-- End Date Field -->
+                     <div id="endDateField" class="d-none mt-3">
+                        <label for="endDate" class="form-label fw-medium">End Date:</label>
+                        <input type="date" id="endDate" name="EndDate" class="form-control">
+                     </div>
+                  </div>
+                  <!-- Spaces -->
+                  <div class="mb-3">
+                     <label class="form-label fw-medium">SPACES<span class="text-danger">*</span></label>
+                     <div class="border rounded">
+                        <div class="form-check form-check-inline d-flex">
+                           <? for (var i = 0; i < spaces.length; i++) { ?>
+                           <div class="m-4 items-center">
+                              <input type="checkbox" class="form-check-input form-check-input-lg fs-4 align-middle" name="Spaces" value="<?= spaces[i].JSON_value ?>">
+                              </option>
+                              <label class = "align-middle">&nbsp<?= spaces[i].name ?></label>
+                           </div>
+                           <? } ?>
+                        </div>
+                     </div>
+                     <span id="SpacesError" class="error-message rounded-lg"></span>
+                  </div>
+                  <!-- Holder -->
+                  <div class="mb-3">
+                     <label class="form-label fw-medium">HOLDER<span class="text-danger">*</span></label>
+                     <select name="User" class="form-select holder" required>
+                        <option>Casual user (no details needed)</option>
+                        <? for (var i = 0; i < users.length; i++) { ?>
+                        <option value="<?= users[i].JSON_value?>" ><?= users[i].name ?></option>
+                        <? } ?>
+                     </select>
+                  </div>
+                  <!-- Booking Title -->
+                  <div class="mb-3">
+                     <label class="form-label fw-medium">BOOKING TITLE</label>
+                     <input type="text" placeholder="Add title" name="Title" id="Title" class="form-control">
+                  </div>
+                  <!-- Notes -->
+                  <div class="mb-3">
+                     <label class="form-label fw-medium">NOTES</label>
+                     <textarea placeholder="Any further information" name="Notes" class="form-control"></textarea>
+                  </div>
+                  <!-- EMAIL -->
+                  <div class="mb-3">
+                     <div id="email-confirm" class="email-confirm form-check ms-3">
+                        <input class="form-check-input form-check-input-lg fs-4" name="Email" type="checkbox" value="sendEmail" id="Email" >
+                        <label class="form-check-label mt-1" for="email">
+                        Send confirmation email
+                        </label>
+                     </div>
+                  </div>
+                  <div class="mb-3">
+                     <div id="email-details" class="email-details border rounded d-none">
+                        <div class="form-group row">
+                           <label class="fw-medium col-form-label col-sm-2 ">Recipient<span class="text-danger">*</span></label>
+                           <div class="col-sm-10">
+                              <input type="search" list="emails" placeholder="Add recipient" name="Recipient" id="Recipient" class="form-control"/>
+                               <datalist id="emails">                                
+                                  <? for (var i = 0; i < users.length; i++) { ?>
+                                  <option value="<?= users[i].email?>" ><?= users[i].email ?></option>
+                                  <? } ?>
+                               </datalist>
+                                <span id="RecipientError" class="error-message rounded-lg"></span>
+                           </div>
+                        </div>
+                        <!--
+                           <div class="form-group row">
+                             <label class="fw-medium col-form-label col-sm-2 ">Subject</label>
+                             <div class="col-sm-10">
+                               <input type="text" placeholder="Add subject" name="Subject" id="Subject" class="form-control"/>
+                             </div>               
+                           </div>
+                            -->
+                        <div class="form-group row">
+                           <label class="fw-medium col-form-label col-sm-2 ">Message</label>
+                           <div class="col-sm-10">
+                              <textarea  name="Message" placeholder="Optional message" id="Message" class="form-control"></textarea>
+                           </div>
+                        </div>
+                     </div>
+                  </div>
+                  <div id="BookingError" class="alert alert-danger d-none" role="alert">
+                  </div>
+                  <div id="BookingStatus" class="alert alert-primary d-none" role="alert">
+                  </div>
+                  <!-- Buttons -->
+                  <div>
+                     <div class="float-end">
+                        <button type="submit" class="btn btn-primary">
+                        <span  class="spinner-confirm spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                        Confirm booking</button>
+                        <!-- <button type="button" class="btn btn-secondary" onclick="window.top.close();">Cancel booking</button>
+                           <button type="button" class="btn btn-secondary" onclick="window.top.close();">Close</button> -->
+                     </div>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </form>
+      <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+      <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+      <?!= include('Javascript'); ?>
+      <style>
+         .error-message {
+         color: #cc0033;
+         background-color: #fce4e4;
+         border: 1px solid #fcc2c3;
+         padding-left: 5px;
+         padding-right: 5px;
+         }
+         .error-message:empty {
+         display: none;
+         }
+         .form-check-input {
+         border-color: rgb(0, 0, 0, .2);
+         }
+         .badge .delete-icon {
+         cursor: pointer;
+         margin-left: 5px;
+         }
+      
+
+@media (max-width: 1000px) {
+  html, body {
+    font-size: 1.25rem;
+    padding: 0;
+    margin: 0;
+  }
+
+  .container {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 10px;
+  }
+
+  .card {
+    width: 100%;
+    margin: 0;
+    padding: 1rem;
+    border-radius: 0;  
+    max-width : 1000px !important;  
+  }
+
+  .form-control,
+  .form-select,
+  .btn,
+  .form-check-label {
+    font-size: 1.25rem;
+    padding: 0.85rem 1.25rem;
+  }
+
+  .form-check-input {
+    transform: scale(1.5);
+    margin-right: 0.75rem;
+  }
+
+  .form-label {
+    font-size: 1.25rem;
+  }
+
+  .form-check-inline {
+    margin-bottom: 0.75rem;
+  }
+
+  .btn-outline-primary {
+    font-size: 1.1rem;
+    padding: 0.6rem 1.2rem;
+  }
+
+  .input-group input[type="date"],
+  .input-group button {
+    font-size: 1.25rem;
+  }
+
+  .email-confirm .form-check-label {
+    margin-top: 0.4rem;
+  }
+}
+
+
+</style>
+   </body>
+</html>
